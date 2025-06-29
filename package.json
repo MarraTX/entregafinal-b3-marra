@@ -1,0 +1,45 @@
+{
+  "name": "entregafinalb3",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch ./src/server.js --mode dev",
+    "prod": "node --watch ./src/server.js --mode prod",
+    "test": "mocha ./test/**/*.test.js --exit",
+    "test:user": "mocha ./test/user.session.test.js --exit",
+    "test:pet": "mocha ./test/pet.test.js --exit",
+    "test:adoption": "mocha ./test/adoption.test.js --exit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "commander": "^14.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "moment": "^2.30.1",
+    "mongoose": "^8.16.0",
+    "mongoose-paginate-v2": "^1.9.1",
+    "morgan": "^1.10.0",
+    "multer": "^2.0.1",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^9.8.0",
+    "chai": "^5.2.0",
+    "mocha": "^11.7.1",
+    "mongodb-memory-server": "^10.1.4",
+    "supertest": "^7.1.1",
+    "supertest-session": "^5.0.1"
+  }
+}

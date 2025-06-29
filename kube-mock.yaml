@@ -1,0 +1,57 @@
+# ==============================================================
+# SERVICE: Exponer el deployment (en la parte superior)
+# ==============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: entregafinalb3-service
+spec:
+  selector:
+    app: entregafinalb3
+  ports:
+    - port: 80 # Puerto del service
+      targetPort: 8080 # Puerto del contenedor
+  type: NodePort # Esto refiere a que hace con las request
+
+---
+# ==============================================================
+# DEPLOYMENT: Despliegue de la app - PODS
+# ==============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: entregafinalb3-deployment
+  labels:
+    app: entregafinalb3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: entregafinalb3
+  template:
+    metadata:
+      labels:
+        app: entregafinalb3
+    spec:
+      containers:
+        - name: entregafinalb3
+          image: dashcamed/entregafinalb3:1.0.0-lts
+          ports:
+            - containerPort: 8080 # puerto interno
+          imagePullPolicy: Always
+          env:
+            - name: MONGO_URL
+              value: "mongodb://host.docker.internal:27017/entregaFinalB3"
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "8080"
+          command: ["npm", "run", "start"]
+# commands
+#kubectl apply -f kube-mock.yaml
+#minikube service entregafinalb3-service --url
+#kubectl logs -f deployment/entregafinalb3-deployment
+#kubectl get svc entregafinalb3-service
+#kubectl get pods
+#kubectl delete -f kube-mock.yaml
+

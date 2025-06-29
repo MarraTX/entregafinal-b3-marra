@@ -1,0 +1,264 @@
+paths:
+  /api/pet/all:
+    get:
+      tags:
+        - Mascotas
+      summary: Devuelve todas las mascotas
+      responses:
+        200:
+          description: Devuelve todas las mascotas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pet"
+          400:
+            description: Error al obtener mascotas
+  /api/pet/{pid}:
+    get:
+      tags:
+        - Mascotas
+      summary: Devuelve una mascota por ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: pid
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Devuelve una mascota por ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        400:
+          description: Error al obtener mascota
+  /api/pet:
+    post:
+      tags:
+        - Mascotas
+      summary: Crea una mascota
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PetWithoutImage"
+            example:
+              name: "Buddy"
+              specie: "Perro"
+              birthDate: "2022-01-01"
+      responses:
+        201:
+          description: Mascota creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        400:
+          description: Error al crear mascota
+
+  /api/pet/withImage:
+    post:
+      tags:
+        - Mascotas
+      summary: Crea una mascota con imagen
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Ariel"
+                specie:
+                  type: string
+                  example: "Gato"
+                birthDate:
+                  type: string
+                  example: "2020-01-01"
+                image:
+                  type: string
+                  format: binary
+          encoding:
+            image:
+              contentType: image/png, image/jpeg
+      responses:
+        201:
+          description: Mascota creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        400:
+          description: Error al crear mascota
+
+  /api/pet/{pid}/imagePet:
+    post:
+      tags:
+        - Mascotas
+      summary: Agrega una imagen a la mascota
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: pid
+          required: true
+          description: ID de la mascota
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+            encoding:
+              image:
+                contentType: image/png, image/jpeg
+      responses:
+        201:
+          description: Imagen agregada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        400:
+          description: Error al agregar imagen
+
+  /api/pet/updateOnePet/{pid}:
+    put:
+      tags:
+        - Mascotas
+      summary: Actualiza una mascota
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: pid
+          required: true
+          description: ID de la mascota
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "NuevoNombreMascota"
+      responses:
+        201:
+          description: Mascota actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        400:
+          description: Error al actualizar mascota
+  /api/pet/deleteOnePet/{pid}:
+    delete:
+      tags:
+        - Mascotas
+      summary: Elimina una mascota
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: pid
+          required: true
+          description: ID de la mascota
+          schema:
+            type: string
+      responses:
+        201:
+          description: Mascota eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pet"
+        400:
+          description: Error al eliminar mascota
+
+components:
+  schemas:
+    PetWithoutImage:
+      type: object
+      properties:
+        name:
+          type: string
+        specie:
+          type: string
+        birthDate:
+          type: string
+    Pet:
+      type: object
+      properties:
+        name:
+          type: string
+        specie:
+          type: string
+        birthDate:
+          type: string
+        adopted:
+          type: boolean
+        owner:
+          type: string
+        image:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              reference:
+                type: string
+    PetWithImage:
+      type: object
+      properties:
+        name:
+          type: string
+        specie:
+          type: string
+        birthDate:
+          type: string
+        image:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              reference:
+                type: string
+    securitySchemes:
+      bearerAuth:
+        type: http
+        scheme: bearer
+        bearerFormat: JWT
+    ResponsePet:
+      type: object
+      properties:
+        status:
+          type: string
+        payload:
+          type: array
+          items:
+            $ref: "#/components/schemas/Pet"

@@ -1,0 +1,322 @@
+paths:
+  /api/auth/register:
+    post:
+      summary: Registro de usuario
+      tags:
+        - Usuarios
+      security: []
+      schema:
+        type: object
+        properties:
+          email:
+            type: string
+            example: marravalentin@gmail.com
+          password:
+            type: string
+            example: 12345
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+            example:
+              first_name: "Valentin"
+              last_name: "Marra"
+              email: "marravalentin@gmail.com"
+              password: "12345"
+      responses:
+        201:
+          description: Registro exitoso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        400:
+          description: Error al registrar usuario
+  /api/auth/login:
+    post:
+      summary: Iniciar sesión
+      tags:
+        - Usuarios
+      security: []
+      schema:
+        type: object
+        properties:
+          email:
+            type: string
+            example: marravalentin@gmail.com
+          password:
+            type: string
+            example: 12345
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+            example:
+              email: "marravalentin@gmail.com"
+              password: "12345"
+      responses:
+        200:
+          description: Inicio de sesión exitoso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        400:
+          description: Error al iniciar sesión
+  /api/user/current:
+    get:
+      summary: Devuelve el usuario actual
+      tags:
+        - Usuarios
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Devuelve el usuario actual
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/UserCurrent"
+        400:
+          description: Error al obtener usuario actual
+
+  /api/user/all:
+    get:
+      summary: Devuelve todos los usuarios
+      tags:
+        - Usuarios
+      requestBody:
+        required: false
+      headers:
+        Authorization:
+          type: string
+          description: Token de autenticación
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Devuelve todos los usuarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserCurrent"
+        400:
+          description: Error al obtener usuarios
+
+  /api/user/{uid}:
+    get:
+      summary: Devuelve un usuario por su id
+      tags:
+        - Usuarios
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Usuario encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: "#/components/schemas/User"
+        400:
+          description: Error al obtener usuario
+  /api/user/updateOneUser/{uid}:
+    put:
+      summary: Actualiza un usuario
+      tags:
+        - Usuarios
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                  example: "NuevoNombreUsuario"
+      responses:
+        200:
+          description: Usuario actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        400:
+          description: Error al actualizar usuario
+  /api/user/deleteOneUser/{uid}:
+    delete:
+      summary: Elimina un usuario
+      tags:
+        - Usuarios
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        201:
+          description: Usuario eliminado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  payload:
+                    $ref: "#/components/schemas/User"
+        404:
+          description: Usuario no encontrado
+        400:
+          description: Error al eliminar usuario
+  /api/user/uploadDocument/{uid}:
+    post:
+      summary: Sube un documento para un usuario
+      tags:
+        - Usuarios
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                document:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Documento subido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        400:
+          description: Error al subir documento
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+        last_connection:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+        pets:
+          type: array
+          items:
+            type: object
+            properties:
+              _id:
+                type: string
+        document:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              reference:
+                type: string
+    UserCurrent:
+      type: object
+      properties:
+        email:
+          type: string
+          example: "usuario@ejemplo.com"
+        role:
+          type: string
+          example: "user"
+        userId:
+          type: string
+          example: "685b4dd06f073de7e9793643"
+        last_connection:
+          type: string
+          example: "27-06-2025 23:24:50"
+        iat:
+          type: number
+          example: 1751081090
+        exp:
+          type: number
+          example: 1751131090
+
+    ResponseUser:
+      type: object
+      properties:
+        status:
+          type: string
+        payload:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
