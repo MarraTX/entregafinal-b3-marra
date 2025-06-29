@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "node --watch ./src/server.js --mode dev",
     "prod": "node --watch ./src/server.js --mode prod",
-    "test": "mocha ./test/**/*.test.js --exit",
-    "test:user": "mocha ./test/user.session.test.js --exit",
-    "test:pet": "mocha ./test/pet.test.js --exit",
-    "test:adoption": "mocha ./test/adoption.test.js --exit"
+    "test": "mocha ./test/**/*.test.js",
+    "test:user": "mocha ./test/user.session.test.js",
+    "test:pet": "mocha ./test/pet.test.js",
+    "test:adoption": "mocha ./test/adoption.test.js"
   },
   "keywords": [],
   "author": "",

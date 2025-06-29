@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: entregafinalb3
-          image: dashcamed/entregafinalb3:1.0.0-lts
+          image: marratx/entregafinalb3:1.0.0-lts
           ports:
             - containerPort: 8080 # puerto interno
           imagePullPolicy: Always

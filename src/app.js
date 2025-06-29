@@ -1,5 +1,5 @@
 import express from "express";
-import mongoose from "mongoose";
+
 import MockRouter from "./routes/mock.router.js";
 import UserRouter from "./routes/user.router.js";
 import PetRouter from "./routes/pet.router.js";
@@ -18,7 +18,7 @@ import { __dirname } from "./utils/utils.js";
 
 const app = express();
 const morganLogger = morgan("dev");
-const URL_MONGO = config.MONGO_URL;
+
 
 //Middleware
 app.use(express.json());
@@ -67,15 +67,6 @@ app.use(passport.initialize());
 // );
 // logger.info("CORS enabled for:", allowedOrigins);
 
-//Mongo
-export const initializeMongo = async () => {
-  try {
-    await mongoose.connect(URL_MONGO);
-    logger.info("Connected to MongoDB");
-  } catch (error) {
-    logger.error("Error connecting to MongoDB:", error);
-    process.exit(1);
-  }
-};
+
 
 export default app;

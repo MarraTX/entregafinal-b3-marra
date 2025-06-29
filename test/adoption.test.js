@@ -4,132 +4,112 @@ import supertest from "supertest";
 import mongoose from "mongoose";
 import app from "../src/app.js";
 
-//* Para mantener la validación estricta de consultas
-mongoose.set("strictQuery", true);
+describe("Testing Adoption API", function () {
+  const request = supertest(app);
+  this.timeout(6000); // Increase timeout for async operations
 
-// URL de conexión a la base de datos de testing
-const MONGO_URI =
-  "mongodb://localhost:27017/mocksGeneratorTest?directConnection=true";
+  let cookie = null;
+  let mockUser = {
+    first_name: "UserForAdoptionTest",
+    last_name: "LastName",
+    email: "adoption.test@example.com",
+    password: "123456",
+    _id: null, // Will be populated after creation
+  };
+  let mockPet = {
+    name: "PetForAdoption",
+    specie: "Dog",
+    birthDate: "2022-02-02",
+    _id: null, // Will be populated after creation
+  };
+  let adoptionId = null;
 
-// Instancia de supertest apuntando a tu servidor
-// const request = supertest("http://localhost:8080");
-const request = supertest(app);
-
-describe("Testing adoption Api", function () {
-  // Aumenta el timeout por si la conexión es lenta
-  this.timeout(6000);
-
-  // Variables para usar entre tests
   before(async function () {
-    // Conexión a MongoDB antes de correr los tests
-    await mongoose
-      .connect(MONGO_URI)
-      .then(() => {
-        console.log("Connected to MongoDB for testing");
-      })
-      .catch((err) => {
-        console.error("Error connecting to MongoDB for testing:", err);
-      });
-    // Usuario de prueba
-    this.mockUser = {
-      first_name: "Usuario de prueba 2",
-      last_name: "Apellido de prueba 2",
-      email: "correodeprueba2@gmail.com",
-      password: "123456",
-    };
-    this.cookie = null;
+    await mongoose.connect("mongodb://localhost:27017/coderhouse-test");
+    console.log("Connected to MongoDB for testing");
 
-    this.mockPet = {
-      name: "Firulais",
-      specie: "Perro",
-      birthDate: "2020-01-01",
-      adopted: false,
-      owner: null,
-      image: [],
-    };
+    // Clean up previous test data
+    await mongoose.connection.collection("users").deleteMany({ email: mockUser.email });
+    await mongoose.connection.collection("pets").deleteMany({ name: mockPet.name });
+    await mongoose.connection.collection("adoptions").deleteMany({});
+
+    // 1. Create user
+    const userRes = await request.post("/api/auth/register").send(mockUser);
+    mockUser._id = userRes.body.payload._id;
+
+    // 2. Login and get cookie
+    const loginRes = await request.post("/api/auth/login").send({ email: mockUser.email, password: mockUser.password });
+    const cookieHeader = loginRes.header["set-cookie"][0];
+    cookie = cookieHeader.split("=")[1].split(";")[0];
+
+    // 3. Create pet
+    const petRes = await request.post("/api/pet").set('Cookie', `token=${cookie}`).send(mockPet);
+    mockPet._id = petRes.body.payload._id;
   });
 
   after(async function () {
-    // Limpia la colección de usuarios después de correr los tests
-    await mongoose.connection.collection("users").deleteMany({
-      email: this.mockUser.email,
-    });
-
-    // Limpia la colección de mascotas después de correr los tests
-    await mongoose.connection.collection("pets").deleteMany({
-      name: this.mockPet.name,
-    });
-
-    // Cierra la conexión a MongoDB después de correr todos los tests
+    // Clean up all test data
+    await mongoose.connection.collection("users").deleteMany({ email: mockUser.email });
+    await mongoose.connection.collection("pets").deleteMany({ name: mockPet.name });
+    await mongoose.connection.collection("adoptions").deleteMany({});
     await mongoose.connection.close();
+    console.log("MongoDB connection closed");
   });
 
-  it("debe registrar un usuario", async function () {
-    const result = await request.post("/api/auth/register").send(this.mockUser);
-    expect(result.status).to.eql(201);
-    expect(result.body.status).to.eql("success");
+  it("POST /api/adoption/createAdoption/:uid/:pid - should create an adoption", async () => {
+    const res = await request
+      .post(`/api/adoption/createAdoption/${mockUser._id}/${mockPet._id}`)
+      .set('Cookie', `token=${cookie}`);
+    
+    expect(res.status).to.equal(201);
+    expect(res.body).to.have.property('status', 'success');
+    expect(res.body.payload).to.have.property('_id');
+    adoptionId = res.body.payload._id; // Save adoptionId for next tests
   });
 
-  it("debe iniciar sesión con un usuario", async function () {
-    const mockLogin = {
-      email: this.mockUser.email,
-      password: this.mockUser.password,
-    };
+  it("GET /api/adoption/getAllAdoptions/all - should get all adoptions", async () => {
+    const res = await request
+      .get("/api/adoption/getAllAdoptions/all")
+      .set('Cookie', `token=${cookie}`);
 
-    const result = await request.post("/api/auth/login").send(mockLogin);
-
-    console.log("result: ", result.header);
-    const cookieResult = result.header["set-cookie"][0];
-    const cookieData = cookieResult.split("=");
-
-    this.cookie = {
-      name: cookieData[0],
-      value: cookieData[1].split(";")[0],
-    };
-    expect(this.cookie.name).to.eql("token");
-    expect(this.cookie.value).to.be.ok;
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property('status', 'success');
+    expect(res.body.payload).to.be.an('array').that.is.not.empty;
   });
 
-  it("debe crear una mascota con imagen", async function () {
-    const result = await request
-      .post("/api/pet/withImage")
-      .set("Cookie", `${this.cookie.name}=${this.cookie.value}`)
-      .field("name", this.mockPet.name)
-      .field("specie", this.mockPet.specie)
-      .field("birthDate", this.mockPet.birthDate)
-      .attach("image", "./test/files/coderDog.jpg");
+  it("GET /api/adoption/getOneAdoption/:aid - should get a single adoption by ID", async () => {
+    const res = await request
+      .get(`/api/adoption/getOneAdoption/${adoptionId}`)
+      .set('Cookie', `token=${cookie}`);
 
-    expect(result.status).to.eql(201);
-    expect(result.body.status).to.eql("success");
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property('status', 'success');
+    expect(res.body.payload).to.have.property('_id', adoptionId);
   });
 
-  it("debe traer las mascotas y seleccionar una para adoptar", async function () {
-    const result = await request
-      .get("/api/pet/all")
-      .set("Cookie", `${this.cookie.name}=${this.cookie.value}`);
-    expect(result.status).to.eql(200);
-    expect(result.body.status).to.eql("success");
-    this.mockPet._id = result.body.payload[0]._id;
-    console.log(this.mockPet._id);
+  it("PUT /api/adoption/updateOneAdoption/:aid/:uid/:pid - should update an adoption", async () => {
+    const res = await request
+      .put(`/api/adoption/updateOneAdoption/${adoptionId}/${mockUser._id}/${mockPet._id}`)
+      .set('Cookie', `token=${cookie}`)
+      .send({ status: 'completed' }); // Assuming we can update the status
+
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property('status', 'success');
   });
 
-  it("debe traer todos los usuarios", async function () {
-    const result = await request
-      .get("/api/user/all")
-      .set("Cookie", `${this.cookie.name}=${this.cookie.value}`);
-    expect(result.status).to.eql(200);
-    expect(result.body.status).to.eql("success");
-    this.mockUser._id = result.body.payload[0]._id;
-    console.log(this.mockUser._id);
+  it("DELETE /api/adoption/deleteOneAdoption/:aid - should delete an adoption", async () => {
+    const res = await request
+      .delete(`/api/adoption/deleteOneAdoption/${adoptionId}`)
+      .set('Cookie', `token=${cookie}`);
+
+    expect(res.status).to.equal(200);
+    expect(res.body).to.have.property('status', 'success');
+
+    // Verify it's actually deleted
+    const getRes = await request
+      .get(`/api/adoption/getOneAdoption/${adoptionId}`)
+      .set('Cookie', `token=${cookie}`);
+    expect(getRes.status).to.equal(404); // Assuming it returns 404 Not Found
   });
 
-  it("debe adoptar una mascota", async function () {
-    const result = await request
-      .post(
-        `/api/adoption/createAdoption/${this.mockUser._id}/${this.mockPet._id}`
-      )
-      .set("Cookie", `${this.cookie.name}=${this.cookie.value}`);
-    expect(result.status).to.eql(201);
-    expect(result.body).to.eql("Adopcion exitosa");
-  });
 });
